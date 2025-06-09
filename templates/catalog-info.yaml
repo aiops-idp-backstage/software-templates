@@ -1,0 +1,25 @@
+apiVersion: backstage.io/v1alpha1
+kind: Location
+metadata:
+  name: aiops-sagemaker-backstage-templates
+  description: AIOps modules Amazon SageMaker Backstage Templates
+spec:
+  targets:
+    # - ./custom-kernel/template-custom-kernel.yaml
+    # - ./endpoint/template-endpoint.yaml
+    # - ./ground-truth-labeling/template-ground-truth-labeling.yaml
+    # - ./model-cicd/template-cicd.yaml
+    # - ./model-monitoring/template-model-monitoring.yaml
+    # - ./model-package-group/template-model-package-group.yaml
+    # - ./model-package-promote-pipeline/template-model-package-promote-pipeline.yaml
+    # - ./notebook/template-notebook.yaml
+    - ./service-catalog-templates/template-service-catalog-templates.yaml
+---
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: system-info
+  description: Holds system information i.e, hostname, IP, OS, etc
+spec:
+  owner: guest
+  hostname: HOSTNAME

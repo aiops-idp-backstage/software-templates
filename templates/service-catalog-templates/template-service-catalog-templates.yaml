@@ -1,0 +1,54 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: sagemaker-project-templates
+  description: Create SageMaker Project Templates for Train a model on Abalone dataset with XGBoost, LLM fine-tuning and evaluation, Batch Inference, Huggingface Model Import, Multi-account Model Deployment
+spec:
+  parameters:
+    - properties:
+        tfVars:
+          properties:
+            aws_region:
+              type: string
+        adminRoleName:
+          default: Admin
+          type: string
+        name:
+          type: string
+        namespace:
+          default: flux-system
+          type: string
+  steps:
+    - id: fetchSystem
+      action: catalog:fetch
+      input:
+        entityRef: system:default/system-info
+    - id: fetch-base
+      action: fetch:template
+      input:
+        url: ./service-catalog-templates/
+        values:
+          adminRoleName: ${{parameters.adminRoleName}}
+          clusterName: ${{ parameters.clusterName }}
+          name: ${{ parameters.name }}
+          namespace: ${{ parameters.namespace }}
+          tfVars: ${{ parameters.tfVars }}
+    - id: publish
+      action: publish:github
+      input:
+        repoUrl: ${{ steps['fetchSystem'].output.entity.spec.hostname }}/github?repo=${{parameters.name}}
+        defaultBranch: main
+    - id: create-argocd-app
+      action: cnoe:create-argocd-app
+      input:
+        appName: ${{parameters.name}}
+        appNamespace: ${{parameters.namespace}}
+        argoInstance: in-cluster
+        projectName: default
+        repoUrl: http://my-gitea-http.gitea.svc.cluster.local:3000/giteaAdmin/${{parameters.name}}
+        path: "manifests"
+    - id: register
+      action: catalog:register
+      input:
+        repoContentsUrl: ${{ steps['publish'].output.repoContentsUrl }}
+        catalogInfoPath: 'catalog-info.yaml'
