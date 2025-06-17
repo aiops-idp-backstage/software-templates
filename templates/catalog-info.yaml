@@ -11,8 +11,8 @@ spec:
     # - ./model-cicd/template-cicd.yaml
     # - ./model-monitoring/template-model-monitoring.yaml
     # - ./model-package-group/template-model-package-group.yaml
-    # - ./model-package-promote-pipeline/template-model-package-promote-pipeline.yaml
-    # - ./notebook/template-notebook.yaml
+    - ./model-package-promote-pipeline/template-model-package-promote-pipeline.yaml
+    - ./notebook/template-notebook.yaml
     - ./service-catalog-templates/template-service-catalog-templates.yaml
     - ./aws-circleci-docker/template.yaml
 ---
