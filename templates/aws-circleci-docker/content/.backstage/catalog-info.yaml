@@ -1,0 +1,16 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: ${{ values.name | dump }}
+  tags:
+    - docker
+    - ecs
+    - circleci
+    - aws
+  annotations:
+    # circleci.com/project-slug: "github/{{ values.owner }}/${{ values.name }}"
+    circleci.com/project-slug: github/acbhatt12/${{ values.name }}
+spec:
+  type: service
+  owner: user:guest
+  lifecycle: experimental

@@ -1,0 +1,169 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+# https://backstage.io/docs/features/software-catalog/descriptor-format#kind-template
+kind: Template
+metadata:
+  name: docker-image-with-circleci-template
+  title: Multi Architecture Docker image build and deploy using CircleCI
+  description: Creates a multi architecture Docker image and deploys it to AWS ECS using CircleCI pipeline. Demonstrates docker image creation process.
+  tags:
+    - docker
+    - ecs
+    - circleci
+    - aws
+spec:
+  owner: user:guest
+  type: service
+
+  # These parameters are used to generate the input form in the frontend, and are
+  # used to gather input data for the execution of the template.
+  parameters:
+    - title: Fill in some steps
+      required:
+        - name
+      properties:
+        name:
+          title: Name
+          type: string
+          description: Unique name of the component
+          ui:autofocus: true
+          ui:options:
+            rows: 5
+    - title: Choose a location
+      required:
+        - repoUrl
+      properties:
+        repoUrl:
+          title: Repository Location
+          type: string
+          ui:field: RepoUrlPicker
+          ui:options:
+            allowedHosts:
+              - github.com
+
+  # These steps are executed in the scaffolder backend, using data that we gathered
+  # via the parameters above.
+  steps:
+    # Each step executes an action, in this case one templates files into the working directory.
+    - id: fetch-base
+      name: Fetch Base
+      action: fetch:template
+      input:
+        url: ./content
+        values:
+          name: ${{ parameters.name }}
+          repoUrl: ${{ parameters.repoUrl }}
+          owner: ${{ parseRepoUrl(parameters.repoUrl).owner }}
+          # projectSlug: "github/${{ steps.get-owner.output.owner }}/${{ parameters.name }}"
+
+        copyWithoutRender:
+          - "**/*.html"
+          - "**/*.css"
+          - "**/*.js"
+          - "**/static/**"
+          - "demo/app/templates/**"
+          - "demo/app/static/**"
+  
+    # This step publishes the contents of the working directory to GitHub.
+    - id: publish
+      name: Publish
+      action: publish:github
+      input:
+        allowedHosts: ['github.com']
+        description: This is ${{ parameters.name }}
+        repoUrl: ${{ parameters.repoUrl }}
+    
+    # - id: circleci-project
+    #   name: Create CircleCI Project
+    #   action: circleci:create-project
+    #   input:
+    #     repoUrl: ${{ parameters.repoUrl }}
+    #     dockerImageName: ${{ parameters.name }}
+
+    # - id: circleci-pipeline
+    #   name: Create CircleCI pipeline
+    #   action: circleci:create-pipeline
+    #   input:
+    #     repoUrl: ${{ parameters.repoUrl }}
+    #     dockerImageName: ${{ parameters.name }}
+
+    # The final step is to register our new component in the catalog.
+    - id: register
+      name: Register
+      action: catalog:register
+      input:
+        repoContentsUrl: ${{ steps['publish'].output.repoContentsUrl }}
+        catalogInfoPath: '/.backstage/catalog-info.yaml'
+    
+    # - id: execute-shell-command
+    #   name: Run a shell command
+    #   action: custom:command:execute
+    #   input:
+    #     command: 'curl -X POST https://circleci.com/api/v1.1/project/github/${{ parameters.owner }}/"${{ parameters.name }}"/follow -H "Circle-Token: ${CIRCLECI_AUTH_TOKEN}"'
+    #     arguments: []
+    # - id: setup-cci-project
+    #   name: Setup CircleCI project
+    #   action: debug:exec
+    #   input:
+    #     command: curl
+    #     args: 
+    #       - -X
+    #       - POST
+    #       - "https://circleci.com/api/v1.1/project/github/${{ parameters.owner }}/${{ parameters.name }}/follow"
+    #       - -H
+    #       - "Circle-Token: ${CIRCLECI_AUTH_TOKEN}"
+    - id: enable-circleci-project
+      name: Enable CircleCI Project
+      action: run:shell
+      input:
+        # IMPORTANT SECURITY NOTE: The CIRCLECI_AUTH_TOKEN environment variable
+        # MUST be securely configured in the Backstage scaffolder's runtime environment.
+        # DO NOT hardcode it here or pass it as a template parameter.
+        # This token needs 'write' access to projects in CircleCI.
+        command: |
+          echo "Attempting to enable CircleCI project for ${{ parameters.owner }}/${{ parameters.name }}..."
+          if [ -z "$CIRCLECI_AUTH_TOKEN" ]; then
+            echo "Error: CIRCLECI_AUTH_TOKEN environment variable is not set. Cannot enable CircleCI project automatically."
+            # Exit with a non-zero code if this is a critical failure, or continue if optional.
+            exit 1
+          fi
+
+          # Construct the project slug for CircleCI API
+          PROJECT_SLUG="github/${{ parameters.owner }}/${{ parameters.name }}"
+
+          # Call the CircleCI API to follow (enable) the project
+          # Using CircleCI v2 API: POST /project/{project-slug}/follow
+          # Note: The 'follow' API endpoint is for enabling a project.
+          # For v2 API, the endpoint structure might vary slightly based on specific needs
+          # For example, to trigger a build, it's POST /project/{project-slug}/pipeline
+          # To simply enable (follow) a project, the v1.1 API was /project/:vcs-type/:username/:project/follow
+          # For v2, typically, projects are 'enabled' by triggering the first pipeline,
+          # or via a specific API endpoint if available for explicit enabling.
+          # Let's use the v1.1 endpoint for 'follow' as it's commonly used for initial setup.
+          # If this doesn't work, a custom action or a different API approach might be needed.
+          curl -X POST \
+            --header "Content-Type: application/json" \
+            --header "Circle-Token: $CIRCLECI_AUTH_TOKEN" \
+            "https://circleci.com/api/v1.1/project/github/${{ parameters.owner }}/${{ parameters.name }}/follow" \
+            --fail \
+            --silent \
+            --show-error \
+            -o /dev/null # Discard output to avoid logging sensitive info
+
+          if [ $? -eq 0 ]; then
+            echo "Successfully enabled CircleCI project: ${PROJECT_SLUG}"
+          else
+            echo "Failed to enable CircleCI project: ${PROJECT_SLUG}. Check API token permissions or project existence."
+            # Consider if this failure should halt the entire scaffolding process.
+            # For now, we'll allow it to continue but log the error.
+            exit 1 # Indicate failure for this step
+          fi
+
+
+  # Outputs are displayed to the user after a successful execution of the template.
+  output:
+    links:
+      - title: Repository
+        url: ${{ steps['publish'].output.remoteUrl }}
+      - title: Open in catalog
+        icon: catalog
+        entityRef: ${{ steps['register'].output.entityRef }}
