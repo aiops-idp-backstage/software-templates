@@ -5,16 +5,16 @@ metadata:
   description: AIOps modules Amazon SageMaker Backstage Templates
 spec:
   targets:
-    # - ./custom-kernel/template-custom-kernel.yaml
-    # - ./endpoint/template-endpoint.yaml
-    # - ./ground-truth-labeling/template-ground-truth-labeling.yaml
-    # - ./model-cicd/template-cicd.yaml
-    # - ./model-monitoring/template-model-monitoring.yaml
-    # - ./model-package-group/template-model-package-group.yaml
-    - ./model-package-promote-pipeline/template-model-package-promote-pipeline.yaml
-    - ./notebook/template-notebook.yaml
-    - ./service-catalog-templates/template-service-catalog-templates.yaml
     - ./aws-circleci-docker/template.yaml
+    - ./sagemaker-studio/template.yaml
+    - ./sagemaker-service-catalog/template.yaml
+    - ./sagemaker-notebook/template.yaml
+    - ./sagemaker-model-package-promote-pipeline/template.yaml
+    - ./sagemaker-model-package-group/template.yaml
+    - ./sagemaker-model-monitoring/template.yaml
+    - ./sagemaker-endpoint/template.yaml
+    - ./sagemaker-custom-kernel/template.yaml
+
 ---
 apiVersion: backstage.io/v1alpha1
 kind: System
