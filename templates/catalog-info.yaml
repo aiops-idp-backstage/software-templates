@@ -5,7 +5,6 @@ metadata:
   description: AIOps modules Amazon SageMaker Backstage Templates
 spec:
   targets:
-    # - ./aws-circleci-docker/template.yaml
     - ./sagemaker-studio/template.yaml
     - ./sagemaker-service-catalog/template.yaml
     - ./sagemaker-notebook/template.yaml
